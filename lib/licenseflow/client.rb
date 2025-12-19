@@ -70,6 +70,19 @@ module LicenseFlow
       end
     end
 
+    def deactivate(params)
+      params[:device_id] ||= get_hardware_id
+      
+      begin
+        response = @conn.post('/functions/v1/deactivate-license', params.to_json)
+        handle_errors!(response)
+        @cache.clear # Clear cache
+        JSON.parse(response.body)
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
     def validate_proof_offline(proof, secret = nil)
       key = secret || @jwt_secret
       raise Error, "JWT Secret is required for offline validation" unless key

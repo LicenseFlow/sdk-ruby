@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'licenseflow'
-  s.version     = '0.1.0'
+  s.version     = '2.0.0'
   s.summary     = "Official Ruby SDK for LicenseFlow"
   s.authors     = ["LicenseFlow"]
   s.email       = ['hello@licenseflow.com']
@@ -11,4 +11,5 @@ Gem::Specification.new do |s|
   s.add_dependency 'faraday', '~> 2.0'
   s.add_dependency 'json', '~> 2.0'
   s.add_dependency 'jwt', '~> 2.0'
+  s.add_dependency 'ed25519', '~> 1.3'
 end

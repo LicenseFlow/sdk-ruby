@@ -3,12 +3,15 @@ require 'json'
 require 'jwt'
 require 'socket'
 require_relative 'errors'
+require 'ed25519'
+require 'base64'
+require 'time'
 
 module LicenseFlow
   class Client
     attr_reader :api_key, :base_url, :jwt_secret
 
-    def __init__(config)
+    def initialize(config)
       @api_key = config[:api_key]
       @base_url = config[:base_url].chomp('/')
       @jwt_secret = config[:jwt_secret]
@@ -101,10 +104,79 @@ module LicenseFlow
       end
     end
 
+    def has_feature?(verification, feature_code)
+      return false unless verification['valid'] && verification['entitlements']
+      
+      ent = verification['entitlements'][feature_code]
+      return false if ent.nil?
+
+      if ent.is_a?(TrueClass) || ent.is_a?(FalseClass)
+        return ent
+      elsif ent.is_a?(Hash)
+        return ent['enabled'] == true || ent['value'] == true
+      end
+      
+      ent == true
+    end
+
+    def get_entitlement(verification, feature_code)
+      return nil unless verification['valid'] && verification['entitlements']
+      verification['entitlements'][feature_code]
+    end
+
+    def check_for_updates(params)
+      begin
+        response = @conn.get('/functions/v1/release-management/latest', params)
+        return nil if response.status == 404
+        
+        handle_errors!(response)
+        data = JSON.parse(response.body)
+        
+        return nil if data.nil? || data['version'] == params[:currentVersion]
+        data
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
+    def download_artifact(params)
+      begin
+        response = @conn.post('/functions/v1/artifact-download', params.to_json)
+        handle_errors!(response)
+        JSON.parse(response.body)
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
+    def verify_offline_license(license_content, public_key_hex)
+      begin
+        data = JSON.parse(license_content)
+        raise "Invalid license format" unless data['license'] && data['signature']
+
+        message = data['license'].to_json
+        signature = Base64.decode64(data['signature'])
+        public_key_bytes = [public_key_hex].pack('H*')
+
+        verify_key = Ed25519::VerifyKey.new(public_key_bytes)
+        verify_key.verify(signature, message)
+        
+        # Check expiry
+        if data['license']['valid_until']
+          expires_at = Time.parse(data['license']['valid_until'])
+          raise "License expired" if Time.now > expires_at
+        end
+
+        data['license']
+      rescue => e
+        raise "Offline verification failed: #{e.message}"
+      end
+    end
+
     private
 
     def handle_errors!(response)
-      return if response.status == 200
+      return if [200, 201].include?(response.status)
 
       begin
         data = JSON.parse(response.body)

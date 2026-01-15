@@ -20,6 +20,7 @@ module LicenseFlow
 
       @conn = Faraday.new(url: @base_url) do |f|
         f.headers['x-api-key'] = @api_key
+        f.headers['Authorization'] = "Bearer #{@api_key}"
         f.headers['Content-Type'] = 'application/json'
         f.request :json
         f.options.timeout = @timeout

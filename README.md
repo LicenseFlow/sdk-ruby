@@ -23,7 +23,7 @@ require 'licenseflow'
 
 client = LicenseFlow::Client.new(
   base_url: 'https://your-project.supabase.co',
-  api_key: 'your-api-key',
+  api_key: 'lf_live_xxxxxxxxxxxx', # Generated from the SaaS platform
   jwt_secret: 'your-jwt-secret'
 )
 

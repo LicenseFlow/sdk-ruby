@@ -52,3 +52,61 @@ end
 - **Faraday Based**: Flexible HTTP client support.
 - **Thread Safe Caching**: Basic in-memory caching.
 - **JWT Support**: Secure offline validation.
+
+## Phase 5: Entitlements
+
+Check access to specific features:
+
+```ruby
+# Check boolean feature
+if client.has_feature(verification, 'ai_features')
+  enable_ai_features
+end
+
+# Get entitlement value
+limit = client.get_entitlement(verification, 'max_users')
+puts "User limit: #{limit}"
+```
+
+## Phase 5: Release Management
+
+Check for updates and download artifacts:
+
+```ruby
+# Check for updates
+update = client.check_for_updates(
+  product_id: 'prod_123',
+  current_version: 'v1.0.0',
+  channel: 'stable'
+)
+
+if update
+  puts "New version: #{update['version']}"
+  
+  # Get download link
+  download = client.download_artifact(
+    license_key: 'LF-KEY-123',
+    release_id: update['id'],
+    platform: 'linux',
+    architecture: 'arm64'
+  )
+  
+  puts "Download URL: #{download['url']}"
+end
+```
+
+## Phase 5: Offline Licensing
+
+Verify a license file without internet access:
+
+```ruby
+license_content = File.read('license.lic')
+public_key = 'YOUR_ORG_PUBLIC_KEY_HEX'
+
+begin
+  license = client.verify_offline_license(license_content, public_key)
+  puts "Offline license valid!"
+rescue StandardError => e
+  puts "Invalid license: #{e.message}"
+end
+```

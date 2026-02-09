@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.version     = '2.0.0'
   s.summary     = "Official Ruby SDK for LicenseFlow"
   s.authors     = ["LicenseFlow"]
-  s.email       = ['hello@licenseflow.com']
+  s.email       = ['hello@licenseflow.dev']
   s.files       = ["lib/licenseflow.rb", "lib/licenseflow/client.rb", "lib/licenseflow/errors.rb"]
   s.homepage    = 'https://github.com/licenseflow/ruby-sdk'
   s.license     = 'MIT'

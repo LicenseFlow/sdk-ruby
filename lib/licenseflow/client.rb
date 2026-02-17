@@ -48,7 +48,8 @@ module LicenseFlow
       params[:device_id] ||= get_hardware_id
       license_key = params[:license_key]
       device_id = params[:device_id]
-      cache_key = "verify:#{license_key}:#{device_id}"
+      environment_id = params[:environment_id] || 'default'
+      cache_key = "verify:#{license_key}:#{device_id}:#{environment_id}"
 
       return @cache[cache_key] if @cache.key?(cache_key)
 

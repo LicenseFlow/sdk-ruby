@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'licenseflow'
-  s.version     = '2.0.0'
+  s.version     = '2.1.0'
   s.summary     = "Official Ruby SDK for LicenseFlow"
   s.authors     = ["LicenseFlow"]
   s.email       = ['hello@licenseflow.dev']

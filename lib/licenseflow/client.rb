@@ -151,6 +151,45 @@ module LicenseFlow
       end
     end
 
+    def checkout_license(license_key, duration_seconds: 3600, requester_id: nil, requester_type: 'ci', metadata: nil)
+      payload = {
+        license_key: license_key,
+        duration_seconds: duration_seconds,
+        requester_id: requester_id || get_hardware_id,
+        requester_type: requester_type
+      }
+      payload[:metadata] = metadata if metadata
+
+      begin
+        response = @conn.post('/functions/v1/checkout-license', payload.to_json)
+        handle_errors!(response)
+        JSON.parse(response.body)
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
+    def checkin_license(lease_key)
+      begin
+        response = @conn.post('/functions/v1/checkin-license', { lease_key: lease_key }.to_json)
+        handle_errors!(response)
+        JSON.parse(response.body)
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
+    def get_lease_status(lease_key)
+      begin
+        response = @conn.get('/functions/v1/lease-status', { lease_key: lease_key })
+        return nil if response.status == 404
+        handle_errors!(response)
+        JSON.parse(response.body)
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
     def verify_offline_license(license_content, public_key_hex)
       begin
         data = JSON.parse(license_content)

@@ -1,6 +1,8 @@
-# licenseflow-ruby
+# LicenseFlow Ruby SDK
 
-Official Ruby SDK for LicenseFlow.
+**Stop Building Licensing Infrastructure. Start Shipping Software.**
+
+The official Ruby SDK for LicenseFlow. Protect your intellectual property, enforce entitlements, and manage software distribution with enterprise-grade security.
 
 ## Installation
 

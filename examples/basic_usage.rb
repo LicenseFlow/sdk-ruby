@@ -1,7 +1,7 @@
 require 'licenseflow'
 
 client = LicenseFlow::Client.new(
-  base_url: 'https://api.test',
+  base_url: 'https://api.licenseflow.dev/v1',
   api_key: 'test-api-key'
 )
 

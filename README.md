@@ -24,7 +24,7 @@ bundle install
 require 'licenseflow'
 
 client = LicenseFlow::Client.new(
-  base_url: 'https://api.licenseflow.dev/v1',
+  base_url: 'https://api.licenseflow.dev',
   api_key: 'lf_live_xxxxxxxxxxxx', # Generated from the SaaS platform
   jwt_secret: 'your-jwt-secret'
 )

@@ -53,8 +53,15 @@ module LicenseFlow
 
       return @cache[cache_key] if @cache.key?(cache_key)
 
+      # Remap to camelCase field names expected by the verify-license backend
+      backend_payload = {
+        licenseKey: license_key,
+        deviceId: device_id
+      }
+      backend_payload[:environmentId] = params[:environment_id] if params[:environment_id]
+
       begin
-        response = @conn.post('/functions/v1/verify-license', params.to_json)
+        response = @conn.post('/functions/v1/verify-license', backend_payload.to_json)
         handle_errors!(response)
         data = JSON.parse(response.body)
         
@@ -183,6 +190,108 @@ module LicenseFlow
       begin
         response = @conn.get('/functions/v1/lease-status', { lease_key: lease_key })
         return nil if response.status == 404
+        handle_errors!(response)
+        JSON.parse(response.body)
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
+    # ── Credits / Usage-Based Billing ──
+
+    def consume_credits(amount, description: nil, product_id: nil, currency: 'credits', reference_id: nil, reference_type: nil, metadata: nil)
+      payload = { amount: amount }
+      payload[:description] = description if description
+      payload[:product_id] = product_id if product_id
+      payload[:currency] = currency if currency != 'credits'
+      payload[:reference_id] = reference_id if reference_id
+      payload[:reference_type] = reference_type if reference_type
+      payload[:metadata] = metadata if metadata
+
+      begin
+        response = @conn.post('/functions/v1/consume-credits', payload.to_json)
+        handle_errors!(response)
+        JSON.parse(response.body)
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
+    def get_credits_balance(product_id: nil, currency: nil)
+      params = {}
+      params[:product_id] = product_id if product_id
+      params[:currency] = currency if currency
+
+      begin
+        response = @conn.get('/functions/v1/get-credit-balance', params)
+        handle_errors!(response)
+        JSON.parse(response.body)
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
+    # ── Entitlements Management ──
+
+    def list_entitlements
+      begin
+        response = @conn.get('/functions/v1/manage-entitlements')
+        handle_errors!(response)
+        JSON.parse(response.body)
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
+    def create_entitlement(code, name, data_type: 'boolean', description: nil, metadata: nil)
+      payload = { code: code, name: name, data_type: data_type }
+      payload[:description] = description if description
+      payload[:metadata] = metadata if metadata
+
+      begin
+        response = @conn.post('/functions/v1/manage-entitlements', payload.to_json)
+        handle_errors!(response)
+        JSON.parse(response.body)
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
+    def update_entitlement(entitlement_id, updates)
+      begin
+        response = @conn.patch("/functions/v1/manage-entitlements/#{entitlement_id}", updates.to_json)
+        handle_errors!(response)
+        JSON.parse(response.body)
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
+    def delete_entitlement(entitlement_id)
+      begin
+        response = @conn.delete("/functions/v1/manage-entitlements/#{entitlement_id}")
+        handle_errors!(response)
+        JSON.parse(response.body)
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
+    def assign_entitlement_to_license(entitlement_id, license_id, value)
+      begin
+        response = @conn.post("/functions/v1/manage-entitlements/#{entitlement_id}/assign-to-license",
+          { license_id: license_id, value: value }.to_json)
+        handle_errors!(response)
+        JSON.parse(response.body)
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
+    def assign_entitlement_to_policy(entitlement_id, policy_id, default_value)
+      begin
+        response = @conn.post("/functions/v1/manage-entitlements/#{entitlement_id}/assign-to-policy",
+          { policy_id: policy_id, default_value: default_value }.to_json)
         handle_errors!(response)
         JSON.parse(response.body)
       rescue Faraday::Error => e

@@ -1,18 +1,17 @@
 # LicenseFlow Ruby SDK
 
+[![Gem Version](https://img.shields.io/gem/v/licenseflow)](https://rubygems.org/gems/licenseflow)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 **Stop Building Licensing Infrastructure. Start Shipping Software.**
 
-The official Ruby SDK for LicenseFlow. Protect your intellectual property, enforce entitlements, and manage software distribution with enterprise-grade security.
+The official Ruby SDK for [LicenseFlow](https://licenseflow.dev). Protect your intellectual property, enforce entitlements, and manage software distribution with enterprise-grade security.
 
 ## Installation
-
-Add this line to your application's Gemfile:
 
 ```ruby
 gem 'licenseflow'
 ```
-
-And then execute:
 
 ```bash
 bundle install
@@ -25,57 +24,72 @@ require 'licenseflow'
 
 client = LicenseFlow::Client.new(
   base_url: 'https://api.licenseflow.dev',
-  api_key: 'lf_live_xxxxxxxxxxxx', # Generated from the SaaS platform
+  api_key: 'lf_live_xxxxxxxxxxxx',
   jwt_secret: 'your-jwt-secret'
 )
 
-begin
-  # 1. Activate License
-  activation = client.activate(
-    license_key: 'XXXX-YYYY-ZZZZ-AAAA',
-    device_name: 'Production Server'
-  )
-  puts "Activated: #{activation['success']}"
+activation = client.activate(
+  license_key: 'XXXX-YYYY-ZZZZ-AAAA',
+  device_name: 'Production Server'
+)
+puts "Activated: #{activation['success']}"
 
-  # 2. Verify License (Uses internal memory cache)
-  verification = client.verify(license_key: 'XXXX-YYYY-ZZZZ-AAAA')
-  puts "Valid: #{verification['valid']}"
-
-rescue LicenseFlow::RateLimitError
-  puts "Rate limit exceeded"
-rescue LicenseFlow::Error => e
-  puts "Error: #{e.message}"
-end
+verification = client.verify(license_key: 'XXXX-YYYY-ZZZZ-AAAA')
+puts "Valid: #{verification['valid']}"
 ```
 
-## Features
+---
 
-- **Hardware ID**: Built-in hostname identification.
-- **Faraday Based**: Flexible HTTP client support.
-- **Thread Safe Caching**: Basic in-memory caching.
-- **JWT Support**: Secure offline validation.
+## API Reference
 
-## Phase 5: Entitlements
+### Core Methods
 
-Check access to specific features:
+| Method | Description |
+|--------|-------------|
+| `activate(license_key:, device_name:, environment_id: nil)` | Activate on a device |
+| `verify(license_key:, environment_id: nil)` | Verify license (cached) |
+| `deactivate(license_key:, device_id: nil)` | Deactivate from a device |
+| `record_usage(license_key:, metric_name:, value:, increment: true)` | Track usage |
+| `get_hardware_id` | Get hostname-based device ID |
+
+### Entitlements
 
 ```ruby
-# Check boolean feature
 if client.has_feature(verification, 'ai_features')
   enable_ai_features
 end
 
-# Get entitlement value
 limit = client.get_entitlement(verification, 'max_users')
 puts "User limit: #{limit}"
 ```
 
-## Phase 5: Release Management
-
-Check for updates and download artifacts:
+### Floating Licenses (Leases)
 
 ```ruby
-# Check for updates
+lease = client.checkout_license(
+  license_key: 'XXXX-XXXX',
+  duration_seconds: 3600,
+  requester_id: "ci-#{ENV['CI_JOB_ID']}",
+  requester_type: 'ci_runner'
+)
+puts "Lease: #{lease['lease_key']}"
+
+client.checkin_license(lease['lease_key'])
+status = client.get_lease_status(lease['lease_key'])
+```
+
+### Credits
+
+```ruby
+result = client.consume_credits(amount: 100, description: 'AI tokens')
+puts "Remaining: #{result['remaining']}"
+
+balance = client.get_credits_balance
+```
+
+### Release Management
+
+```ruby
 update = client.check_for_updates(
   product_id: 'prod_123',
   current_version: 'v1.0.0',
@@ -83,32 +97,61 @@ update = client.check_for_updates(
 )
 
 if update
-  puts "New version: #{update['version']}"
-  
-  # Get download link
   download = client.download_artifact(
-    license_key: 'LF-KEY-123',
+    license_key: 'XXXX-XXXX',
     release_id: update['id'],
     platform: 'linux',
     architecture: 'arm64'
   )
-  
-  puts "Download URL: #{download['url']}"
+  puts "Download: #{download['url']}"
 end
 ```
 
-## Phase 5: Offline Licensing
-
-Verify a license file without internet access:
+### Offline Licensing
 
 ```ruby
 license_content = File.read('license.lic')
-public_key = 'YOUR_ORG_PUBLIC_KEY_HEX'
+license = client.verify_offline_license(license_content, 'ORG_PUBLIC_KEY_HEX')
+puts "Valid until: #{license['valid_until']}"
+```
 
+### Heartbeat
+
+```ruby
+client.start_heartbeat('XXXX-XXXX', interval: 60)
+# ... later
+client.stop_heartbeat
+```
+
+---
+
+## Error Handling
+
+```ruby
 begin
-  license = client.verify_offline_license(license_content, public_key)
-  puts "Offline license valid!"
-rescue StandardError => e
-  puts "Invalid license: #{e.message}"
+  client.activate(license_key: 'XXXX', device_name: 'Server')
+rescue LicenseFlow::RateLimitError
+  puts "Rate limit exceeded"
+rescue LicenseFlow::InvalidLicenseError
+  puts "Invalid license"
+rescue LicenseFlow::NetworkError
+  puts "Network error"
 end
 ```
+
+## Features
+
+- **Faraday HTTP** — Flexible, middleware-based HTTP client
+- **Thread-safe Caching** — In-memory verification cache with TTL
+- **JWT Validation** — Offline proof verification
+- **Ed25519** — Cryptographic offline license verification
+
+## License
+
+MIT
+
+## Links
+
+- 📖 [Documentation](https://docs.licenseflow.dev)
+- 🐛 [Issues](https://github.com/licenseflow/ruby-sdk/issues)
+- 🏠 [Homepage](https://licenseflow.dev)

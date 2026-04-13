@@ -5,6 +5,14 @@ All notable changes to the LicenseFlow Ruby SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-04-06
+
+### Added - Phase 5 Enterprise Finalization
+- **Entitlements**: `has_feature?` and `get_entitlement` helper methods.
+- **Release Management**: `check_for_updates` and `download_artifact`.
+- **Usage Credits**: `consume_credits` and `get_credits_balance`.
+- **Offline Licensing**: `verify_offline_license` with Ed25519 support.
+
 ## [2.1.0] - 2026-02-17
 
 ### Added

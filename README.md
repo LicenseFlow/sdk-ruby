@@ -40,6 +40,31 @@ puts "Valid: #{verification['valid']}"
 
 ---
 
+## Entitlement Caching
+
+`LicenseFlow::Client` includes `EntitlementCache` — a TTL-based in-memory cache with offline grace period.
+
+```ruby
+client = LicenseFlow::Client.new(
+  base_url:      'https://api.licenseflow.dev',
+  api_key:       'lf_live_xxxxxxxxxxxx',
+  jwt_secret:    'your-jwt-secret',
+  cache_ttl:     300,       # Cache TTL in seconds (default: 5 min)
+  offline_grace: 259200    # Offline grace in seconds (default: 72h)
+)
+
+# First call: fetches from API, populates cache
+result = client.verify(license_key: 'XXXX-YYYY-ZZZZ-AAAA')
+
+# Subsequent calls within TTL: instant, no network
+result = client.verify(license_key: 'XXXX-YYYY-ZZZZ-AAAA')
+
+# During network outage within grace: stale cache used
+# After grace expires: LicenseFlow::OfflineLicenseError raised
+```
+
+---
+
 ## API Reference
 
 ### Core Methods
@@ -142,7 +167,7 @@ end
 ## Features
 
 - **Faraday HTTP** — Flexible, middleware-based HTTP client
-- **Thread-safe Caching** — In-memory verification cache with TTL
+- **EntitlementCache** — In-memory TTL cache with configurable offline grace period
 - **JWT Validation** — Offline proof verification
 - **Ed25519** — Cryptographic offline license verification
 
@@ -153,5 +178,5 @@ MIT
 ## Links
 
 - 📖 [Documentation](https://docs.licenseflow.dev)
-- 🐛 [Issues](https://github.com/licenseflow/ruby-sdk/issues)
+- 🐛 [Issues](https://github.com/LicenseFlow/sdk-ruby/issues)
 - 🏠 [Homepage](https://licenseflow.dev)

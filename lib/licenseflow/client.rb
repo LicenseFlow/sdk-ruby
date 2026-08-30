@@ -95,6 +95,36 @@ module LicenseFlow
       end
     end
 
+    # Identity-based (keyless) entitlement resolution.
+    # Resolves everything an authenticated person is entitled to from their
+    # email alone — licenses they own plus any seats assigned to them.
+    #
+    # @param email [String] Verified email address
+    # @param product_id [String, nil] Optional product ID filter
+    # @param environment_id [String, nil] Optional environment ID
+    # @return [Hash]
+    def resolve_for_identity(email, product_id: nil, environment_id: nil)
+      cache_key = "identity:#{email}:#{product_id || 'all'}:#{environment_id || 'default'}"
+      cached = @cache[cache_key]
+      return cached if cached
+
+      payload = { email: email }
+      payload[:productId] = product_id if product_id
+      payload[:environmentId] = environment_id if environment_id
+
+      begin
+        response = @conn.post('/functions/v1/resolve-entitlements', payload.to_json)
+        handle_errors!(response)
+        data = JSON.parse(response.body)
+
+        @cache[cache_key] = data if data['resolved']
+
+        data
+      rescue Faraday::Error => e
+        raise NetworkError, e.message
+      end
+    end
+
     def validate_proof_offline(proof, secret = nil)
       key = secret || @jwt_secret
       raise Error, "JWT Secret is required for offline validation" unless key

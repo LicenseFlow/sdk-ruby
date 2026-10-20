@@ -1,4 +1,5 @@
 require_relative 'canonical_endpoints'
+require_relative 'audit_log'
 require 'faraday'
 require 'json'
 require 'jwt'
@@ -24,6 +25,7 @@ module LicenseFlow
         f.headers['Authorization'] = "Bearer #{@api_key}"
         f.headers['Content-Type'] = 'application/json'
         f.request :json
+        f.use LicenseFlow::AuditLog
         f.use LicenseFlow::CanonicalEndpoints
         f.options.timeout = @timeout
         f.adapter Faraday.default_adapter
